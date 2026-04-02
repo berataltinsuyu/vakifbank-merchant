@@ -1,0 +1,17 @@
+cat > .gitignore << 'EOF'
+# .NET
+VbMerchant/bin/
+VbMerchant/obj/
+VbMerchant/wwwroot/uploads/
+VbMerchant/*.user
+VbMerchant/appsettings.Development.json
+
+# Angular
+vb-merchant/node_modules/
+vb-merchant/dist/
+vb-merchant/.angular/
+
+# Genel
+.DS_Store
+*.log
+EOF
