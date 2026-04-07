@@ -29,9 +29,6 @@ namespace VbMerchant.Validators
                 .NotEmpty().WithMessage("Adres boş olamaz.")
                 .MinimumLength(10).WithMessage("Adres en az 10 karakter olmalıdır.");
 
-            RuleFor(x => x.Email)
-                .NotEmpty().WithMessage("Email boş olamaz.");
-
             RuleFor(x => x.IlId)
                 .GreaterThan(0).WithMessage("İl seçimi zorunludur.");
 

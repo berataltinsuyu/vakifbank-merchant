@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
+using VbMerchant.Data;
+using VbMerchant.Data.Entities;
 using VbMerchant.Models;
 
 namespace VbMerchant.Data;
@@ -22,10 +24,15 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<Iller> Illers { get; set; }
 
+    public virtual DbSet<Kullanicilar> Kullanicilars { get; set; }
+
     public virtual DbSet<SirketTipleri> SirketTipleris { get; set; }
+
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+
         modelBuilder.Entity<BasvuruDokumanlari>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__BasvuruD__3214EC078443DA1E");
@@ -68,6 +75,7 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("FK_Basvurular_SirketTipi");
         });
 
+
         modelBuilder.Entity<Ilceler>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Ilceler__3214EC073BAE4E53");
@@ -82,10 +90,23 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__Iller__3214EC07EAA4E4E1");
         });
 
+
+        modelBuilder.Entity<Kullanicilar>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Kullanic__3214EC07987385FC");
+
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.OlusturmaTarihi).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.Rol).HasDefaultValue("User");
+        });
+
+
         modelBuilder.Entity<SirketTipleri>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__SirketTi__3214EC076D6A41C0");
         });
+
+
 
         OnModelCreatingPartial(modelBuilder);
     }

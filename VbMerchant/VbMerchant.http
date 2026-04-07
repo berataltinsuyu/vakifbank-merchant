@@ -1,4 +1,4 @@
-@VbMerchant_HostAddress = http://localhost:5162
+@VbMerchant_HostAddress = http://localhost:5199
 
 GET {{VbMerchant_HostAddress}}/weatherforecast/
 Accept: application/json
