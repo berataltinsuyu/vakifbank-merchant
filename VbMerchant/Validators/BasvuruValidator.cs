@@ -23,7 +23,11 @@ namespace VbMerchant.Validators
 
             RuleFor(x => x.CepTelefon)
                 .NotEmpty().WithMessage("Cep Telefon boş olamaz.")
-                .Matches(@"^(05|5)\d{9}$").WithMessage("Geçerli bir telefon numarası giriniz.");
+                .Must(value => IsValidMobilePhone(value)).WithMessage("Geçerli bir telefon numarası giriniz.");
+
+            RuleFor(x => x.IsTelefon)
+                .Must(value => string.IsNullOrWhiteSpace(value) || IsValidBusinessPhone(value))
+                .WithMessage("İş telefonu 2XX ile başlamalıdır.");
 
             RuleFor(x => x.Adres)
                 .NotEmpty().WithMessage("Adres boş olamaz.")
@@ -34,6 +38,23 @@ namespace VbMerchant.Validators
 
             RuleFor(x => x.IlceId)
                 .GreaterThan(0).WithMessage("İlçe seçimi zorunludur.");
+        }
+
+        private static bool IsValidMobilePhone(string? phone)
+        {
+            var normalizedPhone = NormalizePhone(phone);
+            return !string.IsNullOrWhiteSpace(normalizedPhone) && System.Text.RegularExpressions.Regex.IsMatch(normalizedPhone, @"^(05|5)\d{9}$");
+        }
+
+        private static bool IsValidBusinessPhone(string? phone)
+        {
+            var normalizedPhone = NormalizePhone(phone);
+            return System.Text.RegularExpressions.Regex.IsMatch(normalizedPhone, @"^(02|2)\d{9}$");
+        }
+
+        private static string NormalizePhone(string? phone)
+        {
+            return System.Text.RegularExpressions.Regex.Replace(phone ?? string.Empty, @"\s+", string.Empty);
         }
     }
 }

@@ -1,4 +1,3 @@
-cat > .gitignore << 'EOF'
 # .NET
 VbMerchant/bin/
 VbMerchant/obj/
@@ -11,7 +10,6 @@ vb-merchant/node_modules/
 vb-merchant/dist/
 vb-merchant/.angular/
 
-# Genel
+# General
 .DS_Store
 *.log
-EOFVbMerchant/appsettings.json
