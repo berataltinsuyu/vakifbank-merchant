@@ -13,3 +13,22 @@ vb-merchant/.angular/
 # General
 .DS_Store
 *.log
+
+# Local Secrets
+back-end/appsettings.Local.json
+back-end/appsettings.Development.json
+back-end/bin/
+back-end/obj/
+back-end/wwwroot/uploads/
+.env
+.env.local
+
+
+front-end/node_modules/
+front-end/.env
+front-end/.env.local
+front-end/.env.development.local
+
+# Build output
+bin/
+obj/

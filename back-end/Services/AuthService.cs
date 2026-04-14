@@ -1,39 +1,40 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using VbMerchant.Data;
 using VbMerchant.DTOs;
-using VbMerchant.Models;
+using VbMerchant.Repositories;
 
 namespace VbMerchant.Services;
 
 public class AuthService
 {
-    private readonly AppDbContext _context;
+    private readonly IUserRepository _userRepository;
     private readonly IConfiguration _config;
 
-    public AuthService(AppDbContext context, IConfiguration config)
+    public AuthService(IUserRepository userRepository, IConfiguration config)
     {
-        _context = context;
+        _userRepository = userRepository;
         _config  = config;
     }
 
     public async Task<LoginResponse?> GirisAsync(LoginRequest request)
     {
-  
-        var kullanici = await _context.Kullanicilars
-            .FirstOrDefaultAsync(k => k.Email == request.Email && k.IsActive == true);
+        var normalizedEmail = NormalizeEmail(request.Email);
+        if (normalizedEmail is null || string.IsNullOrWhiteSpace(request.Sifre))
+        {
+            return null;
+        }
+
+        var kullanici = await _userRepository.GetActiveByEmailAsync(normalizedEmail);
 
         if (kullanici == null) return null;
 
-      
-        var sifreGecerli = BCrypt.Net.BCrypt.Verify(request.Sifre, kullanici.SifreHash);
+        var sifreGecerli = SifreDogrula(request.Sifre, kullanici.SifreHash);
         if (!sifreGecerli) return null;
 
         kullanici.SonGirisTarihi = DateTime.Now;
-        await _context.SaveChangesAsync();
+        await _userRepository.SaveChangesAsync();
 
   
         var token = TokenUret(kullanici);
@@ -50,7 +51,31 @@ public class AuthService
 
     
     public static string SifreHashle(string sifre)
-        => BCrypt.Net.BCrypt.HashPassword(sifre);
+    {
+        if (string.IsNullOrWhiteSpace(sifre))
+        {
+            throw new ArgumentException("Şifre boş olamaz.", nameof(sifre));
+        }
+
+        return BCrypt.Net.BCrypt.HashPassword(sifre);
+    }
+
+    public static bool SifreDogrula(string sifre, string? sifreHash)
+    {
+        if (string.IsNullOrWhiteSpace(sifre) || string.IsNullOrWhiteSpace(sifreHash))
+        {
+            return false;
+        }
+
+        try
+        {
+            return BCrypt.Net.BCrypt.Verify(sifre, sifreHash);
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
     private (string Token, DateTime Expiry) TokenUret(Data.Entities.Kullanicilar kullanici)
     {
@@ -75,5 +100,12 @@ public class AuthService
         );
 
         return (new JwtSecurityTokenHandler().WriteToken(token), expiry);
+    }
+
+    private static string? NormalizeEmail(string? email)
+    {
+        return string.IsNullOrWhiteSpace(email)
+            ? null
+            : email.Trim().ToLowerInvariant();
     }
 }

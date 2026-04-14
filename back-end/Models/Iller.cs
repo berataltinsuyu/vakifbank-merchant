@@ -6,18 +6,21 @@ using Microsoft.EntityFrameworkCore;
 
 namespace VbMerchant.Models;
 
-[Table("Iller")]
-[Index("IlKodu", Name = "UQ__Iller__64422E3524A7B85D", IsUnique = true)]
+[Table("iller")]
+[Index("IlKodu", Name = "uq_iller_il_kodu", IsUnique = true)]
 public partial class Iller
 {
     [Key]
+    [Column("id")]
     public int Id { get; set; }
 
     [StringLength(5)]
     [Unicode(false)]
+    [Column("il_kodu")]
     public string IlKodu { get; set; } = null!;
 
     [StringLength(50)]
+    [Column("il_adi")]
     public string IlAdi { get; set; } = null!;
 
     [InverseProperty("Il")]

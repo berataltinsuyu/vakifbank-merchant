@@ -6,15 +6,18 @@ using Microsoft.EntityFrameworkCore;
 
 namespace VbMerchant.Models;
 
-[Table("Ilceler")]
+[Table("ilceler")]
 public partial class Ilceler
 {
     [Key]
+    [Column("id")]
     public int Id { get; set; }
 
+    [Column("il_id")]
     public int IlId { get; set; }
 
     [StringLength(80)]
+    [Column("ilce_adi")]
     public string IlceAdi { get; set; } = null!;
 
     [InverseProperty("Ilce")]

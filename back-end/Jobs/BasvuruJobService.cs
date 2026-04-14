@@ -18,7 +18,7 @@ public class VbMerchantJobService
     public async Task UpdateBasvuruDurumAsync()
     {
         var basvurular = await _db.Basvurulars
-            .Where(b => b.Durum == "Beklemede" && b.OlusturmaTarihi <= DateTime.UtcNow.AddDays(-2))
+            .Where(b => b.Durum == "Beklemede" && b.OlusturmaTarihi <= DateTime.Now.AddDays(-2))
             .ToListAsync();
 
         foreach (var basvuru in basvurular)

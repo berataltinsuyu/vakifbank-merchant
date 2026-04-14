@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using VbMerchant.DTOs;
 using VbMerchant.Services;
-using VbMerchant.Data;
-using Microsoft.EntityFrameworkCore;
 
 namespace VbMerchant.Controllers;
 
@@ -31,19 +29,4 @@ namespace VbMerchant.Controllers;
 
         return Ok(sonuc);
     }
-
-    
-// [HttpPost("seed")]
-// public async Task<IActionResult> Seed([FromServices] AppDbContext db)
-// {
-//     var hash = AuthService.SifreHashle("123456");
-//     var kullanici = await db.Kullanicilars
-//         .FirstOrDefaultAsync(k => k.Email == "admin@vakifbank.com.tr");
-//     if (kullanici != null)
-//     {
-//         kullanici.SifreHash = hash;
-//         await db.SaveChangesAsync();
-//     }
-//     return Ok("Şifre güncellendi.");
-// }
-}
+} 
