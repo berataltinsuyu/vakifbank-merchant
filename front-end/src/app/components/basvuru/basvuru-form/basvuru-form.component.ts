@@ -1,13 +1,23 @@
-import { Component, ElementRef, NgZone, OnInit, ViewChild } from '@angular/core';
+import { Component, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { firstValueFrom, forkJoin } from 'rxjs';
+import * as L from 'leaflet';
 import { BasvuruService } from '../../../services/basvuru.service';
 import { PiyasaEkraniComponent } from '../piyasa-ekrani/piyasa-ekrani.component';
 import { Il, Ilce, SirketTipi, DokumanItem, BasvuruCreateRequest } from '../../../models/basvuru.model';
 import { vergiNoValidator, tcknValidator, telefonValidator, emailValidator, vergiNoUniquenessValidator, IsTelefonValidator } from '../../../validators/custom.validators';
 
-declare const google: any;
+interface NominatimSearchResult {
+  lat: string;
+  lon: string;
+  display_name: string;
+}
+
+interface NominatimReverseResult {
+  display_name?: string;
+}
 
 @Component({
   selector: 'app-basvuru-form',
@@ -15,9 +25,7 @@ declare const google: any;
   imports: [CommonModule, ReactiveFormsModule, PiyasaEkraniComponent],
   templateUrl: './basvuru-form.component.html'
 })
-export class BasvuruFormComponent implements OnInit {
-  @ViewChild('haritaAramaInput') haritaAramaInput?: ElementRef<HTMLInputElement>;
-
+export class BasvuruFormComponent implements OnInit, OnDestroy {
   form!: FormGroup;
 
   // Adım yönetimi
@@ -35,17 +43,14 @@ export class BasvuruFormComponent implements OnInit {
   sirketTipleri: SirketTipi[] = [];
 
   // Harita
-  harita: any = null;
-  marker: any = null;
-  geocoder: any = null;
-  autocomplete: any = null;
+  harita: L.Map | null = null;
+  marker: L.CircleMarker | null = null;
   private haritaEl: HTMLElement | null = null;
-  private autocompleteInputEl: HTMLInputElement | null = null;
-  private sonOtomatikAdres = '';
   seciliEnlem: number | null = null;
   seciliBoylam: number | null = null;
   konumSecildi = false;
-  konumAramaMetni = '';
+  haritaAramaMetni = '';
+  konumAraniyor = false;
   konumAramaHatasi = '';
 
   // Dokümanlar
@@ -61,11 +66,23 @@ export class BasvuruFormComponent implements OnInit {
   basariMesaji = '';
   hataMesaji = '';
 
-  constructor(private fb: FormBuilder, private basvuruService: BasvuruService, private ngZone: NgZone) {}
+  constructor(
+    private fb: FormBuilder,
+    private basvuruService: BasvuruService,
+    private ngZone: NgZone,
+    private http: HttpClient
+  ) {}
 
   ngOnInit() {
     this.formOlustur();
     this.lookupGetir();
+  }
+
+  ngOnDestroy() {
+    this.harita?.remove();
+    this.harita = null;
+    this.marker = null;
+    this.haritaEl = null;
   }
 
   private formOlustur() {
@@ -135,91 +152,135 @@ export class BasvuruFormComponent implements OnInit {
   oncekiAdim() {
     this.hataMesaji = '';
     this.mevcutAdim = Math.max(this.mevcutAdim - 1, 1);
+    if (this.mevcutAdim === 2) {
+      setTimeout(() => this.haritaBaslat(), 300);
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // ── Google Maps ───────────────────────────────────────────────────────────
+  // ── OpenStreetMap / Leaflet ───────────────────────────────────────────────
   haritaBaslat() {
-    const kontrol = setInterval(() => {
-      if (typeof google !== 'undefined') {
-        clearInterval(kontrol);
-        this.ngZone.run(() => this.haritaOlustur());
-      }
-    }, 300);
+    this.ngZone.runOutsideAngular(() => this.haritaOlustur());
   }
 
   private haritaOlustur() {
-    const mapEl = document.getElementById('google-map');
+    const mapEl = document.getElementById('leaflet-map');
     if (!mapEl) return;
 
-    if (!this.konumAramaMetni.trim()) {
-      this.konumAramaMetni = this.form.get('adres')?.value ?? '';
+    this.haritaAramaMetni ||= `${this.form.get('adres')?.value ?? ''}`.trim();
+
+    if (this.harita && this.haritaEl === mapEl) {
+      this.harita.invalidateSize();
+      return;
     }
 
-    if (!this.harita || this.haritaEl !== mapEl) {
-      this.haritaEl = mapEl;
-      this.geocoder = new google.maps.Geocoder();
-      this.harita = new google.maps.Map(mapEl, {
-        center: { lat: 41.0082, lng: 28.9784 }, zoom: 12,
-        mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
-        styles: [
-          { elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
-          { elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
-          { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
-          { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#c9c9c9' }] }
-        ]
-      });
-      this.harita.addListener('click', (e: any) => {
-        this.ngZone.run(() => this.konumSec(e.latLng.lat(), e.latLng.lng()));
-      });
-
-      if (this.seciliEnlem !== null && this.seciliBoylam !== null) {
-        this.konumuHaritadaGoster(this.seciliEnlem, this.seciliBoylam, false);
-      }
+    if (this.harita) {
+      this.harita.remove();
+      this.harita = null;
+      this.marker = null;
     }
 
-    this.haritaAramaKutusuBaslat();
+    this.haritaEl = mapEl;
+    const baslangicKonumu: L.LatLngExpression =
+      this.seciliEnlem !== null && this.seciliBoylam !== null
+        ? [this.seciliEnlem, this.seciliBoylam]
+        : [41.0082, 28.9784];
+
+    this.harita = L.map(mapEl, {
+      center: baslangicKonumu,
+      zoom: this.seciliEnlem !== null && this.seciliBoylam !== null ? 16 : 12,
+      zoomControl: true
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(this.harita);
+
+    this.harita.on('click', (e: L.LeafletMouseEvent) => {
+      this.ngZone.run(() => this.konumSec(e.latlng.lat, e.latlng.lng));
+    });
+
+    if (this.seciliEnlem !== null && this.seciliBoylam !== null) {
+      this.konumuHaritadaGoster(this.seciliEnlem, this.seciliBoylam, false);
+    }
+
+    setTimeout(() => this.harita?.invalidateSize(), 0);
   }
 
   private konumSec(lat: number, lng: number) {
     this.konumuHaritadaGoster(lat, lng);
+    this.konumAramaHatasi = '';
     this.koordinattanAdresGetir(lat, lng);
   }
 
-  adresleKonumAra() {
+  async adresleKonumAra() {
     const sorgu = this.konumSorgusuOlustur();
     if (!sorgu) {
-      this.konumAramaHatasi = 'Haritada göstermek için bir adres yazın.';
-      return;
-    }
-    if (!this.geocoder) {
-      this.konumAramaHatasi = 'Harita servisi henüz hazır değil.';
+      this.konumAramaHatasi = 'Haritada aramak için bir adres yazın.';
       return;
     }
 
+    this.konumAraniyor = true;
     this.konumAramaHatasi = '';
-    this.geocoder.geocode(
-      { address: sorgu, componentRestrictions: { country: 'TR' } },
-      (results: any, status: string) => {
-        this.ngZone.run(() => {
-          if (status !== 'OK' || !results?.length) {
-            this.konumAramaHatasi = 'Adres bulunamadı. Daha açık bir adres deneyin.';
-            return;
-          }
 
-          const sonuc = results[0];
-          const konum = sonuc.geometry?.location;
-          if (!konum) {
-            this.konumAramaHatasi = 'Seçilen adres için konum alınamadı.';
-            return;
-          }
+    try {
+      const params = new HttpParams()
+        .set('format', 'jsonv2')
+        .set('limit', '1')
+        .set('addressdetails', '1')
+        .set('countrycodes', 'tr')
+        .set('accept-language', 'tr')
+        .set('q', sorgu);
 
-          this.konumAramaHatasi = '';
-          this.adresAlanlariniGuncelle(sonuc.formatted_address, true);
-          this.konumuHaritadaGoster(konum.lat(), konum.lng());
-        });
+      const sonuclar = await firstValueFrom(
+        this.http.get<NominatimSearchResult[]>('https://nominatim.openstreetmap.org/search', { params })
+      );
+      const sonuc = sonuclar[0];
+
+      if (!sonuc) {
+        this.konumAramaHatasi = 'Adres bulunamadı. Daha açık bir adres deneyin.';
+        return;
       }
-    );
+
+      const lat = Number(sonuc.lat);
+      const lng = Number(sonuc.lon);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        this.konumAramaHatasi = 'Seçilen adres için konum alınamadı.';
+        return;
+      }
+
+      this.adresAlaniniGuncelle(sonuc.display_name);
+      this.konumAramaHatasi = '';
+      this.konumuHaritadaGoster(lat, lng);
+    } catch {
+      this.konumAramaHatasi = 'Adres aranırken bir sorun oluştu. Lütfen tekrar deneyin.';
+    } finally {
+      this.konumAraniyor = false;
+    }
+  }
+
+  private async koordinattanAdresGetir(lat: number, lng: number) {
+    try {
+      const params = new HttpParams()
+        .set('format', 'jsonv2')
+        .set('lat', String(lat))
+        .set('lon', String(lng))
+        .set('zoom', '18')
+        .set('addressdetails', '1')
+        .set('accept-language', 'tr');
+
+      const sonuc = await firstValueFrom(
+        this.http.get<NominatimReverseResult>('https://nominatim.openstreetmap.org/reverse', { params })
+      );
+
+      if (sonuc?.display_name) {
+        this.konumAramaHatasi = '';
+        this.adresAlaniniGuncelle(sonuc.display_name);
+      }
+    } catch {
+      this.konumAramaHatasi = 'Konum seçildi ancak adres bilgisi alınamadı.';
+    }
   }
 
   private konumuHaritadaGoster(lat: number, lng: number, yakinlastir = true) {
@@ -227,86 +288,43 @@ export class BasvuruFormComponent implements OnInit {
     this.seciliBoylam = lng;
     this.konumSecildi = true;
 
+    if (!this.harita) return;
+
     if (this.marker) {
-      this.marker.setMap(this.harita);
-      this.marker.setPosition({ lat, lng });
+      this.marker.setLatLng([lat, lng]);
     } else {
-      this.marker = new google.maps.Marker({
-        position: { lat, lng }, map: this.harita, title: 'İşyeri Konumu',
-        icon: { path: google.maps.SymbolPath.CIRCLE, scale: 10, fillColor: '#705D00', fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 3 }
-      });
+      this.marker = L.circleMarker([lat, lng], {
+        radius: 10,
+        color: '#ffffff',
+        weight: 3,
+        fillColor: '#705D00',
+        fillOpacity: 1
+      }).addTo(this.harita);
     }
 
-    this.harita.panTo({ lat, lng });
+    this.harita.panTo([lat, lng]);
     if (yakinlastir) {
-      this.harita.setZoom(Math.max(this.harita.getZoom() || 0, 16));
+      this.harita.setZoom(Math.max(this.harita.getZoom(), 16));
     }
   }
 
-  private haritaAramaKutusuBaslat() {
-    const inputEl = this.haritaAramaInput?.nativeElement;
-    if (!inputEl || !google.maps.places) return;
-    if (this.autocompleteInputEl === inputEl) return;
-
-    this.autocompleteInputEl = inputEl;
-    this.autocomplete = new google.maps.places.Autocomplete(inputEl, {
-      componentRestrictions: { country: 'tr' },
-      fields: ['formatted_address', 'geometry', 'name'],
-      types: ['geocode']
-    });
-
-    this.autocomplete.addListener('place_changed', () => {
-      this.ngZone.run(() => {
-        const yer = this.autocomplete?.getPlace();
-        const konum = yer?.geometry?.location;
-        if (!konum) {
-          this.konumAramaHatasi = 'Seçilen yer için konum alınamadı.';
-          return;
-        }
-
-        this.konumAramaHatasi = '';
-        this.adresAlanlariniGuncelle(yer.formatted_address || yer.name || this.konumAramaMetni, true);
-        this.konumuHaritadaGoster(konum.lat(), konum.lng());
-      });
-    });
-  }
-
-  private koordinattanAdresGetir(lat: number, lng: number) {
-    if (!this.geocoder) return;
-
-    this.geocoder.geocode({ location: { lat, lng } }, (results: any, status: string) => {
-      this.ngZone.run(() => {
-        if (status !== 'OK' || !results?.length) return;
-        this.konumAramaHatasi = '';
-        this.adresAlanlariniGuncelle(results[0].formatted_address);
-      });
-    });
-  }
-
-  private adresAlanlariniGuncelle(adres: string, zorla = false) {
+  private adresAlaniniGuncelle(adres: string | undefined) {
     const temizAdres = (adres || '').replace(/\s*,\s*Türkiye$/i, '').trim();
     if (!temizAdres) return;
 
-    this.konumAramaMetni = temizAdres;
+    this.haritaAramaMetni = temizAdres;
     const adresKontrol = this.form.get('adres');
-    const mevcutAdres = `${adresKontrol?.value ?? ''}`.trim();
-    const kullaniciManuelAdresGirdi =
-      !!mevcutAdres &&
-      adresKontrol?.dirty &&
-      mevcutAdres !== this.sonOtomatikAdres;
-
-    if (zorla || !kullaniciManuelAdresGirdi) {
-      adresKontrol?.setValue(temizAdres);
-      this.sonOtomatikAdres = temizAdres;
-    }
+    adresKontrol?.setValue(temizAdres);
+    adresKontrol?.markAsDirty();
+    adresKontrol?.updateValueAndValidity();
   }
 
   private konumSorgusuOlustur(): string {
-    const serbestMetin = this.konumAramaMetni.trim() || `${this.form.get('adres')?.value ?? ''}`.trim();
+    const adres = this.haritaAramaMetni.trim() || `${this.form.get('adres')?.value ?? ''}`.trim();
     const il = this.iller.find(x => x.id === Number(this.form.get('ilId')?.value))?.ilAdi;
     const ilce = this.ilceler.find(x => x.id === Number(this.form.get('ilceId')?.value))?.ilceAdi;
 
-    return [serbestMetin, ilce, il, 'Türkiye'].filter(Boolean).join(', ');
+    return [adres, ilce, il, 'Türkiye'].filter(Boolean).join(', ');
   }
 
   // ── Doküman ───────────────────────────────────────────────────────────────
