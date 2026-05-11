@@ -14,15 +14,18 @@ public class BasvuruController : ControllerBase
     private readonly IBasvuruService _service;
     private readonly IValidator<BasvuruCreateRequest> _validator;
     private readonly AppDbContext _context;
+    private readonly ISupabaseStorageService _storageService;
 
     public BasvuruController(
         IBasvuruService service,
         IValidator<BasvuruCreateRequest> validator,
-        AppDbContext context)
+        AppDbContext context,
+        ISupabaseStorageService storageService)
     {
         _service   = service;
         _validator = validator;
         _context   = context;
+        _storageService = storageService;
     }
 
 
@@ -140,6 +143,30 @@ public class BasvuruController : ControllerBase
 
         if (basvuru == null) return NotFound();
 
+        var dokumanlar = new List<object>();
+        foreach (var d in basvuru.BasvuruDokumanlaris)
+        {
+            string? signedUrl = null;
+            try
+            {
+                signedUrl = await _storageService.CreateSignedUrlAsync(d.DosyaYolu, HttpContext.RequestAborted);
+            }
+            catch
+            {
+                signedUrl = null;
+            }
+
+            dokumanlar.Add(new
+            {
+                d.Id,
+                d.DokumanTipi,
+                d.DosyaAdi,
+                d.DosyaYolu,
+                d.DosyaBoyutu,
+                SignedUrl = signedUrl
+            });
+        }
+
         return Ok(new
         {
             basvuru.Id,
@@ -165,10 +192,7 @@ public class BasvuruController : ControllerBase
             basvuru.Enlem,
             basvuru.Boylam,
             basvuru.OlusturmaTarihi,
-            Dokumanlar = basvuru.BasvuruDokumanlaris.Select(d => new
-            {
-                d.Id, d.DokumanTipi, d.DosyaAdi, d.DosyaYolu, d.DosyaBoyutu
-            }),
+            Dokumanlar = dokumanlar,
             BasvuruTarihces = basvuru.BasvuruTarihces.Select(t => new
             {
                 t.Durum, t.Aciklama, t.IslemTarihi, t.Kullanici

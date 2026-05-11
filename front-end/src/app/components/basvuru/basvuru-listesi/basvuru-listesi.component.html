@@ -461,7 +461,10 @@
               <p class="text-sm font-semibold truncate">{{ d.dosyaAdi }}</p>
               <p class="text-xs text-neutral-400">{{ d.dosyaBoyutu | number }} byte</p>
             </div>
-            <a [href]="apiBaseUrl + '/' + d.dosyaYolu" target="_blank"
+            <a [href]="d.signedUrl"
+               target="_blank"
+               [class.pointer-events-none]="!d.signedUrl"
+               [class.opacity-50]="!d.signedUrl"
                class="w-8 h-8 flex items-center justify-center rounded-lg bg-white text-neutral-400
                       hover:text-[#705D00] hover:bg-[#FFD700]/10 transition-colors">
               <span class="material-symbols-outlined text-sm">download</span>

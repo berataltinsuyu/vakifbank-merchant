@@ -1,22 +1,36 @@
+using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VbMerchant.Data;
 using VbMerchant.Models;
+using VbMerchant.Services;
 
 namespace VbMerchant.Controllers;
 
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class DokumanController : ControllerBase
 {
-    private readonly AppDbContext _context;
-    private readonly IWebHostEnvironment _env;
+    private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".pdf", ".png", ".jpg", ".jpeg"
+    };
 
-    public DokumanController(AppDbContext context, IWebHostEnvironment env)
+    private static readonly HashSet<string> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "application/pdf", "image/png", "image/jpeg"
+    };
+
+    private readonly AppDbContext _context;
+    private readonly ISupabaseStorageService _storageService;
+
+    public DokumanController(AppDbContext context, ISupabaseStorageService storageService)
     {
         _context = context;
-        _env = env;
+        _storageService = storageService;
     }
 
     [HttpPost("yukle")]
@@ -34,30 +48,27 @@ public class DokumanController : ControllerBase
         if (!basvuruVarMi)
             return BadRequest("Geçersiz başvuru ID.");
 
-        var rootPath = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-        var uploadsFolder = Path.Combine(rootPath, "uploads");
-
-        if (!Directory.Exists(uploadsFolder))
-            Directory.CreateDirectory(uploadsFolder);
-
         var sonuclar = new List<string>();
 
         foreach (var dosya in dosyalar)
         {
-            var benzersizAd = $"{Guid.NewGuid()}_{dosya.FileName}";
-            var tamYol = Path.Combine(uploadsFolder, benzersizAd);
+            var validationError = ValidateFile(dosya);
+            if (validationError is not null)
+                return BadRequest(validationError);
 
-            await using (var stream = new FileStream(tamYol, FileMode.Create))
-            {
-                await dosya.CopyToAsync(stream);
-            }
+            var guvenliDosyaAdi = SanitizeFileName(dosya.FileName);
+            var benzersizAd = $"{Guid.NewGuid():N}_{guvenliDosyaAdi}";
+            var objectPath = $"basvurular/{basvuruId}/{dokumanTipi}/{benzersizAd}";
+
+            await using var stream = dosya.OpenReadStream();
+            await _storageService.UploadAsync(objectPath, stream, dosya.ContentType, HttpContext.RequestAborted);
 
             _context.BasvuruDokumanlaris.Add(new BasvuruDokumanlari
             {
                 BasvuruId = basvuruId,
                 DokumanTipi = dokumanTipi,
                 DosyaAdi = dosya.FileName,
-                DosyaYolu = $"/uploads/{benzersizAd}",
+                DosyaYolu = objectPath,
                 DosyaBoyutu = dosya.Length,
                 YuklemeTarihi = DateTime.Now
             });
@@ -67,5 +78,34 @@ public class DokumanController : ControllerBase
 
         await _context.SaveChangesAsync();
         return Ok(sonuclar);
+    }
+
+    private string? ValidateFile(IFormFile dosya)
+    {
+        if (dosya.Length <= 0)
+            return $"{dosya.FileName}: Boş dosya yüklenemez.";
+
+        if (dosya.Length > _storageService.MaxFileSizeBytes)
+            return $"{dosya.FileName}: Dosya boyutu sınırı aşıldı.";
+
+        var extension = Path.GetExtension(dosya.FileName);
+        if (string.IsNullOrWhiteSpace(extension) || !AllowedExtensions.Contains(extension))
+            return $"{dosya.FileName}: Yalnızca PDF, PNG, JPG veya JPEG dosyaları yüklenebilir.";
+
+        if (string.IsNullOrWhiteSpace(dosya.ContentType) || !AllowedContentTypes.Contains(dosya.ContentType))
+            return $"{dosya.FileName}: Dosya türü desteklenmiyor.";
+
+        return null;
+    }
+
+    private static string SanitizeFileName(string fileName)
+    {
+        var onlyFileName = Path.GetFileName(fileName);
+        var sanitized = Regex.Replace(onlyFileName, @"[^A-Za-z0-9._-]+", "_");
+        sanitized = sanitized.Trim('_', '.');
+
+        return string.IsNullOrWhiteSpace(sanitized)
+            ? "dokuman"
+            : sanitized;
     }
 }

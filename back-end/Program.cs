@@ -83,6 +83,9 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddScoped<IBasvuruRepository, BasvuruRepository>();
 builder.Services.AddScoped<IBasvuruService, BasvuruService>();
+builder.Services.Configure<SupabaseStorageOptions>(
+    builder.Configuration.GetSection(SupabaseStorageOptions.SectionName));
+builder.Services.AddHttpClient<ISupabaseStorageService, SupabaseStorageService>();
 // builder.Services.AddScoped<VbMerchantJobService>();
 builder.Services.AddHttpClient<DovizService>();
 builder.Services.AddHttpClient<GeocodingService>();
