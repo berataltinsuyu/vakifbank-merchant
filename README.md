@@ -70,8 +70,8 @@ Ekran görüntüleri `docs/screenshots/` klasörü altında yer almaktadır.
 | Ekran | Görsel |
 |---|---|
 | Giriş | ![Giriş](docs/screenshots/login.png) |
-| Başvuru Formu 1 | ![Başvuru Formu 1](docs/screenshots/currency-page.png) |
-| Başvuru Formu 2 | ![Başvuru Formu 2](docs/screenshots/application-form.png) |
+| Başvuru Formu  | ![Başvuru Formu](docs/screenshots/currency-page.png) |
+| Başvuru Formu  | ![Başvuru Formu](docs/screenshots/application-form.png) |
 | Harita Seçimi | ![Harita Seçimi](docs/screenshots/map-selection.png) |
 | Başvuru Listesi | ![Başvuru Listesi](docs/screenshots/application-list.png) |
 | Başvuru Detayı | ![Başvuru Detayı](docs/screenshots/application-detail.png) |
@@ -212,12 +212,12 @@ Screenshots are available under the `docs/screenshots/` folder.
 | Screen | Image |
 |---|---|
 | Login | ![Login](docs/screenshots/login.png) |
+| Application Form | ![Application Form](docs/screenshots/currency-page.png) |
 | Application Form | ![Application Form](docs/screenshots/application-form.png) |
 | Map Selection | ![Map Selection](docs/screenshots/map-selection.png) |
 | Application List | ![Application List](docs/screenshots/application-list.png) |
 | Application Detail | ![Application Detail](docs/screenshots/application-detail.png) |
 | Document Upload | ![Document Upload](docs/screenshots/document-upload.png) |
-| Currency Page | ![Currency Page](docs/screenshots/currency-page.png) |
 
 ### Project Structure
 
