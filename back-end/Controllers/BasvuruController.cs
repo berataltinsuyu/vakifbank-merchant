@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VbMerchant.DTOs;
 using VbMerchant.Services;
@@ -8,6 +9,7 @@ using VbMerchant.Data;
 namespace VbMerchant.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class BasvuruController : ControllerBase
 {
