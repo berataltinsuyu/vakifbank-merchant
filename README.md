@@ -131,7 +131,6 @@ cp appsettings.Local.example.json appsettings.Local.json
 
 Ardından özel olarak paylaşılan gerçek değerleri `appsettings.Local.json` içine yerleştirin.
 
-> `appsettings.Local.json` git tarafından ignore edilir. Gerçek connection string, Supabase service role key ve JWT secret hiçbir zaman commit edilmemelidir.
 
 Backend'i çalıştırın:
 
@@ -294,7 +293,6 @@ cp appsettings.Local.example.json appsettings.Local.json
 
 Then fill `appsettings.Local.json` with the real values shared privately for review.
 
-> `appsettings.Local.json` is ignored by git. Real connection strings, Supabase service role keys, and JWT secrets must never be committed.
 
 Run the backend:
 
