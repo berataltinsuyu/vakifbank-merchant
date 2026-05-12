@@ -70,12 +70,13 @@ Ekran görüntüleri `docs/screenshots/` klasörü altında yer almaktadır.
 | Ekran | Görsel |
 |---|---|
 | Giriş | ![Giriş](docs/screenshots/login.png) |
-| Başvuru Formu | ![Başvuru Formu](docs/screenshots/application-form.png) |
+| Başvuru Formu 1 | ![Başvuru Formu 1](docs/screenshots/currency-page.png) |
+| Başvuru Formu 2 | ![Başvuru Formu 2](docs/screenshots/application-form.png) |
 | Harita Seçimi | ![Harita Seçimi](docs/screenshots/map-selection.png) |
 | Başvuru Listesi | ![Başvuru Listesi](docs/screenshots/application-list.png) |
 | Başvuru Detayı | ![Başvuru Detayı](docs/screenshots/application-detail.png) |
 | Doküman Yükleme | ![Doküman Yükleme](docs/screenshots/document-upload.png) |
-| Döviz Ekranı | ![Döviz Ekranı](docs/screenshots/currency-page.png) |
+
 
 ### Proje Yapısı
 
