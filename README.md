@@ -1,178 +1,285 @@
-# 🏦 VakıfBank Üye İşyeri Başvuru Sistemi
+# VakıfBank Üye İşyeri Başvuru Sistemi
 
-Üye işyeri başvurularını dijital ortamda toplamak, yönetmek ve takip etmek için geliştirilmiş kurumsal web uygulaması.
+Kurumsal üye işyeri başvurularını dijital ortamda almak, dokümanları güvenli şekilde saklamak ve başvuru süreçlerini yönetmek için geliştirilmiş full-stack bir merchant onboarding uygulaması.
 
----
+Bu proje, VakıfBank Ödeme Sistemleri Uygulama Geliştirme departmanında gerçekleştirdiğim staj sürecinde geliştirilmiş bir staj projesidir.
 
-## Teknoloji Yığını
-
-### Backend
-| Teknoloji | Kullanım |
-|-----------|----------|
-| .NET 9 / ASP.NET Core Web API | REST API |
-| Entity Framework Core 9 (DB First) | ORM |
-| PostgreSQL / Supabase | Veritabanı |
-| FluentValidation | Model doğrulama |
-| Swagger | API dokümantasyonu |
-
-### Frontend
-| Teknoloji | Kullanım |
-|-----------|----------|
-| Angular 17+ | SPA Framework |
-| TypeScript | Dil |
-| Tailwind CSS 3 | Stil |
-| RxJS | Reaktif programlama |
-| OpenStreetMap + Leaflet | Konum seçimi |
-
-### Harici Servisler
-| Servis | Kullanım |
-|--------|----------|
-| open.er-api.com | Anlık döviz kurları |
-| Nominatim | Adres arama ve ters geocoding |
-| Supabase Storage | Özel doküman depolama ve signed URL |
+> Bu repo staj projesi sunumu, yerel teknik inceleme ve portfolyo/GitHub değerlendirmesi için hazırlanmıştır. Finalize edilmiş bir production ürünü değildir ve rol bazlı yetkilendirme, audit logging, rate limiting, monitoring, test kapsamı ve daha sıkı operasyonel güvenlik ile geliştirilebilir. Deployment kapsam dışıdır.
 
 ---
 
-## Mimari
+## Türkçe
 
-```
-┌─────────────────────────────────────────────┐
-│              Angular Frontend               │
-│  Login  │  Başvuru Formu  │  Geçmiş Listesi │
-└──────────────────┬──────────────────────────┘
-                   │ HTTP / JSON
-┌──────────────────▼──────────────────────────┐
-│          ASP.NET Core Web API               │
-│  Controllers → Services → Repositories      │
-│  Entity Framework Core (DB First)           │
-└──────────────────┬──────────────────────────┘
-                   │
-┌──────────────────▼──────────────────────────┐
-│       PostgreSQL / Supabase Database        │
-└─────────────────────────────────────────────┘
+### Proje Özeti
+
+Uygulama, bir işletmenin üye işyeri başvurusu oluşturmasını, adres ve harita konumu seçmesini, gerekli belgeleri yüklemesini ve başvuruların yönetim panelinden incelenmesini sağlar. Backend tarafında ASP.NET Core Web API, frontend tarafında Angular kullanılır. Demo veritabanı ve doküman saklama altyapısı Supabase üzerinde çalışır.
+
+### Öne Çıkan Özellikler
+
+- JWT tabanlı giriş ve korumalı başvuru ekranları
+- Üç adımlı başvuru formu
+- FluentValidation ile backend tarafında merkezi validasyon yönetimi
+- Vergi numarası, TCKN, telefon ve e-posta validasyonları
+- OpenStreetMap + Leaflet ile harita üzerinden konum seçimi
+- Nominatim ile adres arama ve ters geocoding
+- PDF/PNG/JPG/JPEG doküman yükleme
+- Supabase Storage private bucket kullanımı
+- Doküman görüntüleme için backend tarafından üretilen signed URL
+- Başvuru listeleme, filtreleme, sıralama ve detay paneli
+- 2 günden fazla "Bekliyor" durumunda kalan başvuruları kontrol edip iptale çeken zamanlanmış job / Windows scheduled service mantığı
+- Job’ın her 30 dakikada bir çalışacak şekilde planlanması
+- Döviz kuru ekranı
+
+### Teknoloji Yığını
+
+| Katman | Teknolojiler |
+|---|---|
+| Backend | ASP.NET Core Web API, .NET 9, Entity Framework Core, FluentValidation, JWT |
+| Frontend | Angular, TypeScript, RxJS, Tailwind CSS |
+| Veritabanı | Supabase PostgreSQL |
+| Dosya Saklama | Supabase Storage, private bucket, backend signed URL |
+| Harita | OpenStreetMap, Leaflet |
+| Geocoding | Nominatim |
+| API Dokümantasyonu | Swagger / OpenAPI |
+
+### Mimari
+
+```text
+Angular Frontend
+  ├─ Login
+  ├─ Başvuru Formu
+  ├─ Harita ve Adres Seçimi
+  └─ Başvuru Geçmişi
+        │
+        ▼
+ASP.NET Core Web API
+  ├─ Controllers
+  ├─ Services
+  ├─ Repositories
+  ├─ Scheduled Job / Windows Scheduled Service Logic
+  └─ Entity Framework Core
+        │
+        ├─ Supabase PostgreSQL
+        └─ Supabase Storage (Private Bucket)
 ```
 
-**Yaklaşım:** DB First · Repository Pattern · DTO Katmanı
+### Ekran Görüntüleri
+
+Ekran görüntüleri `docs/screenshots/` klasörü altında yer almaktadır.
+
+| Ekran | Görsel |
+|---|---|
+| Giriş | ![Giriş](docs/screenshots/login.png) |
+| Başvuru Formu | ![Başvuru Formu](docs/screenshots/application-form.png) |
+| Harita Seçimi | ![Harita Seçimi](docs/screenshots/map-selection.png) |
+| Başvuru Listesi | ![Başvuru Listesi](docs/screenshots/application-list.png) |
+| Başvuru Detayı | ![Başvuru Detayı](docs/screenshots/application-detail.png) |
+| Doküman Yükleme | ![Doküman Yükleme](docs/screenshots/document-upload.png) |
+| Döviz Ekranı | ![Döviz Ekranı](docs/screenshots/currency-page.png) |
+
+### Proje Yapısı
+
+```text
+back-end/          ASP.NET Core Web API
+front-end/         Angular uygulaması
+docs/screenshots/  GitHub README ekran görüntüleri
+README.md          Ana proje dokümantasyonu
+```
+
+### Kurulum
+
+#### 1. Repoyu Klonlayın
+
+```bash
+git clone https://github.com/berataltinsuyu/vakifbank-merchant.git
+cd vakifbank-merchant
+```
+
+#### 2. Backend Konfigürasyonu
+
+Backend Supabase PostgreSQL ve Supabase Storage kullanır. Teknik inceleme için yerel PostgreSQL kurulumu veya migration çalıştırma gerekmez. İnceleme için gerçek `back-end/appsettings.Local.json` dosyası özel olarak paylaşılır.
+
+Örnek dosyayı kopyalayabilirsiniz:
+
+```bash
+cd back-end
+cp appsettings.Local.example.json appsettings.Local.json
+```
+
+Ardından özel olarak paylaşılan gerçek değerleri `appsettings.Local.json` içine yerleştirin.
+
+> `appsettings.Local.json` git tarafından ignore edilir. Gerçek connection string, Supabase service role key ve JWT secret hiçbir zaman commit edilmemelidir.
+
+Backend'i çalıştırın:
+
+```bash
+dotnet restore
+dotnet run
+```
+
+Backend ve frontend ayrı terminal pencerelerinde çalıştırılmalıdır.
+
+Swagger varsayılan olarak geliştirme ortamında açıktır:
+
+```text
+http://localhost:5199/swagger
+```
+
+#### 3. Frontend Kurulumu
+
+```bash
+cd front-end
+npm install
+npm start
+```
+
+Angular uygulaması:
+
+```text
+http://localhost:4200
+```
+
+### Demo Giriş
+
+Demo giriş bilgileri, teknik inceleme için paylaşılan `appsettings.Local.json` dosyasıyla birlikte özel olarak iletilecektir.
 
 ---
 
-## Özellikler
+## English
 
-### Başvuru Formu — 3 Adımlı
-- **Adım 1:** Firma kimlik ve iletişim bilgileri
-- **Adım 2:** İl/ilçe seçimi, OpenStreetMap + Leaflet üzerinden konum işaretleme
-- **Adım 3:** PDF/JPEG/PNG formatında çoklu doküman yükleme (Supabase Storage)
+### Project Overview
 
-### Validasyonlar
-- Vergi no: tam 10 rakam + backend uniqueness kontrolü (async, 600ms debounce)
-- TCKN: tam 11 rakam
-- Türk cep telefonu formatı
-- E-posta format kontrolü
-- Zorunlu alan kontrolü
+This project was developed as an internship project during my internship at VakıfBank in the Payment Systems Application Development Department.
 
-### Başvuru Geçmişi
-- VKN, firma adı, e-posta, durum ve tarih aralığına göre filtreleme
-- Tablo başlıklarına tıklayarak sıralama
-- Sayfalama (10/25/50 kayıt)
-- Duruma göre istatistik kartları
-- Sağdan kayan detay paneli (dokümanlar ve tarihçe dahil)
+This is a full-stack merchant onboarding application for collecting merchant applications, selecting business locations on a map, uploading required documents, and reviewing applications through an administrative interface. The backend is built with ASP.NET Core Web API, and the frontend is built with Angular. Supabase is used as the demo PostgreSQL database and private document storage infrastructure.
 
-### Piyasa Ekranı
-- USD/TRY, EUR/TRY, GBP/TRY kurları
-- 30 saniyede bir otomatik güncelleme
+This repository is prepared for internship project presentation, local technical review, and portfolio/GitHub evaluation. It is not a finalized production product and can be further improved with role-based authorization, audit logging, rate limiting, monitoring, test coverage, and stricter operational security.
 
----
+### Features
 
-## API Endpoint'leri
+- JWT-based login and protected application screens
+- Three-step merchant application form
+- Centralized backend validation with FluentValidation
+- Tax number, national ID, phone, and email validation
+- Location selection with OpenStreetMap + Leaflet
+- Address search and reverse geocoding with Nominatim
+- PDF/PNG/JPG/JPEG document upload
+- Private Supabase Storage bucket
+- Backend-generated signed URLs for document viewing
+- Application listing, filtering, sorting, and detail panel
+- Scheduled background job / Windows scheduled service logic that checks applications remaining in "Pending" status for more than 2 days and automatically cancels them
+- The job is planned to run every 30 minutes
+- Currency rates page
 
-### Başvuru
+### Technology Stack
 
-| Method | URL | Açıklama |
-|--------|-----|----------|
-| `GET` | `/api/basvuru/liste` | Özet liste |
-| `GET` | `/api/basvuru/{id}/detay` | Tam detay |
-| `POST` | `/api/basvuru` | Yeni başvuru |
-| `PATCH` | `/api/basvuru/{id}/durum` | Durum güncelle |
-| `GET` | `/api/basvuru/vergino-kontrol` | Uniqueness kontrolü |
+| Layer | Technologies |
+|---|---|
+| Backend | ASP.NET Core Web API, .NET 9, Entity Framework Core, FluentValidation, JWT |
+| Frontend | Angular, TypeScript, RxJS, Tailwind CSS |
+| Database | Supabase PostgreSQL |
+| Storage | Supabase Storage, private bucket, backend signed URLs |
+| Maps | OpenStreetMap, Leaflet |
+| Geocoding | Nominatim |
+| API Docs | Swagger / OpenAPI |
 
-### Diğer
+### Architecture
 
-| Method | URL | Açıklama |
-|--------|-----|----------|
-| `POST` | `/api/dokuman/yukle` | Dosya yükle |
-| `GET` | `/api/lookup/iller` | İl listesi |
-| `GET` | `/api/lookup/ilceler/{ilId}` | İlçe listesi |
-| `GET` | `/api/lookup/sirkettipleri` | Şirket tipleri |
-| `GET` | `/api/doviz` | Döviz kurları |
-
-### Başvuru Durumları
-
-| Değer | Anlamı |
-|-------|--------|
-| `Bekliyor` | Yeni başvuru |
-| `Incelemede` | İnceleniyor |
-| `Onaylandi` | Onaylandı |
-| `Reddedildi` | Reddedildi |
-| `EksikBelge` | Eksik belge |
-
----
-
-## Veritabanı Şeması
-
-```
-Iller ──────────────────┐
-Ilceler ────────────────┤
-SirketTipleri ──────────┼──► Basvurular
-                             │
-                        ┌────┴───────────────────┐
-                        ▼                        ▼
-                BasvuruDokumanlari          BasvuruTarihce
+```text
+Angular Frontend
+  ├─ Login
+  ├─ Application Form
+  ├─ Map and Address Selection
+  └─ Application History
+        │
+        ▼
+ASP.NET Core Web API
+  ├─ Controllers
+  ├─ Services
+  ├─ Repositories
+  ├─ Scheduled Job / Windows Scheduled Service Logic
+  └─ Entity Framework Core
+        │
+        ├─ Supabase PostgreSQL
+        └─ Supabase Storage (Private Bucket)
 ```
 
----
+### Screenshots
 
-## Proje Yapısı
+Screenshots are available under the `docs/screenshots/` folder.
 
-### Backend
-```
-VbMerchant/
-├── Controllers/
-├── Data/Entities/
-├── DTOs/
-├── Repositories/
-├── Services/
-├── Validators/
-└── Program.cs
-```
+| Screen | Image |
+|---|---|
+| Login | ![Login](docs/screenshots/login.png) |
+| Application Form | ![Application Form](docs/screenshots/application-form.png) |
+| Map Selection | ![Map Selection](docs/screenshots/map-selection.png) |
+| Application List | ![Application List](docs/screenshots/application-list.png) |
+| Application Detail | ![Application Detail](docs/screenshots/application-detail.png) |
+| Document Upload | ![Document Upload](docs/screenshots/document-upload.png) |
+| Currency Page | ![Currency Page](docs/screenshots/currency-page.png) |
 
-### Frontend
-```
-src/app/
-├── components/
-│   ├── auth/login/
-│   ├── basvuru/
-│   │   ├── basvuru-form/
-│   │   ├── basvuru-listesi/
-│   │   └── piyasa-ekrani/
-│   └── layout/
-├── models/
-├── pipes/
-├── services/
-└── validators/
+### Project Structure
+
+```text
+back-end/          ASP.NET Core Web API
+front-end/         Angular application
+docs/screenshots/  GitHub README screenshots
+README.md          Main project documentation
 ```
 
----
+### Setup
 
-## Geliştirme Notları
+#### 1. Clone the Repository
 
-- **Yerel inceleme konfigürasyonu:** Proje Supabase PostgreSQL ve private Supabase Storage kullanır. Teknik inceleme için yerel PostgreSQL kurulumu veya migration çalıştırma gerekmez; gerçek `back-end/appsettings.Local.json` dosyası özel olarak paylaşılır.
-- **Örnek config:** `back-end/appsettings.Local.example.json` dosyası placeholder değerler içerir. Gerekirse bu dosya `back-end/appsettings.Local.json` olarak kopyalanıp gerçek değerler özel kanaldan girilir.
-- **Gizli bilgiler:** `appsettings.Local.json` git'e eklenmemelidir. Supabase connection string, service role key ve JWT secret hiçbir zaman commit edilmemelidir.
-- **FluentValidation + Async:** `MustAsync` ASP.NET otomatik validasyon pipeline'ıyla uyumsuz. Vergi no uniqueness kontrolü controller'da `AnyAsync` ile yapılıyor.
-- **DB First:** Tablo yapısı değişince `dotnet ef dbcontext scaffold` tekrar çalıştırılmalı.
-- **Döviz Kurları:** DB'ye kaydedilmez, her istekte anlık çekilir.
-- **Dokümanlar:** Dosyalar private Supabase Storage bucket'a backend üzerinden yüklenir; görüntüleme için backend signed URL üretir.
+```bash
+git clone https://github.com/berataltinsuyu/vakifbank-merchant.git
+cd vakifbank-merchant
+```
 
----
+#### 2. Backend Setup
 
-*ASP.NET Core 9 · Angular 17 · PostgreSQL · Entity Framework Core 9*
+The backend uses Supabase PostgreSQL and Supabase Storage. For local technical review, no local PostgreSQL installation or migration step is required when the private `back-end/appsettings.Local.json` file is provided.
+
+You can copy the example configuration:
+
+```bash
+cd back-end
+cp appsettings.Local.example.json appsettings.Local.json
+```
+
+Then fill `appsettings.Local.json` with the real values shared privately for review.
+
+> `appsettings.Local.json` is ignored by git. Real connection strings, Supabase service role keys, and JWT secrets must never be committed.
+
+Run the backend:
+
+```bash
+dotnet restore
+dotnet run
+```
+
+Backend and frontend should be started in separate terminal windows.
+
+Swagger is available in development mode:
+
+```text
+http://localhost:5199/swagger
+```
+
+#### 3. Frontend Setup
+
+```bash
+cd front-end
+npm install
+npm start
+```
+
+Angular app:
+
+```text
+http://localhost:4200
+```
+
+### Demo Login
+
+Demo login credentials will be shared privately together with the `appsettings.Local.json` file for technical review.
