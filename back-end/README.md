@@ -165,6 +165,9 @@ src/app/
 
 ## Geliştirme Notları
 
+- **Yerel inceleme konfigürasyonu:** Proje Supabase PostgreSQL ve private Supabase Storage kullanır. Teknik inceleme için yerel PostgreSQL kurulumu veya migration çalıştırma gerekmez; gerçek `back-end/appsettings.Local.json` dosyası özel olarak paylaşılır.
+- **Örnek config:** `back-end/appsettings.Local.example.json` dosyası placeholder değerler içerir. Gerekirse bu dosya `back-end/appsettings.Local.json` olarak kopyalanıp gerçek değerler özel kanaldan girilir.
+- **Gizli bilgiler:** `appsettings.Local.json` git'e eklenmemelidir. Supabase connection string, service role key ve JWT secret hiçbir zaman commit edilmemelidir.
 - **FluentValidation + Async:** `MustAsync` ASP.NET otomatik validasyon pipeline'ıyla uyumsuz. Vergi no uniqueness kontrolü controller'da `AnyAsync` ile yapılıyor.
 - **DB First:** Tablo yapısı değişince `dotnet ef dbcontext scaffold` tekrar çalıştırılmalı.
 - **Döviz Kurları:** DB'ye kaydedilmez, her istekte anlık çekilir.
