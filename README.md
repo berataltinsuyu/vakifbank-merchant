@@ -63,6 +63,28 @@ ASP.NET Core Web API
         └─ Supabase Storage (Private Bucket)
 ```
 
+### Veritabanı ve Süreç Yapısı
+
+Supabase PostgreSQL başvuru, kullanıcı, durum geçmişi ve doküman metadata kayıtlarını tutar. Yüklenen dosyaların fiziksel içeriği Supabase Storage içinde saklanır; PostgreSQL tarafında dosya adı, boyut, yükleme tarihi ve Supabase Storage object path bilgisi tutulur.
+
+![Veritabanı Şeması](docs/screenshots/database-schema.png)
+
+- `basvurular`: Ana üye işyeri başvuru tablosudur; firma, yetkili kişi, vergi, adres, koordinat, kategori, tahmini ciro, durum ve tarih bilgilerini saklar.
+- `basvuru_dokumanlari`: Yüklenen doküman metadata bilgilerini ve Supabase Storage object path değerini saklar.
+- `basvuru_tarihce`: Başvuruların durum geçmişini, açıklama, işlem tarihi ve kullanıcı bilgisiyle takip eder.
+- `kullanicilar`: Uygulama kullanıcı ve giriş bilgilerini saklar.
+- `sirket_tipleri`: Şirket tipi referans tablosudur.
+- `iller`: İl referans tablosudur.
+- `ilceler`: İlçe referans tablosudur ve `iller` ile ilişkilidir.
+
+İlişki özeti:
+
+- `basvurular -> basvuru_dokumanlari`
+- `basvurular -> basvuru_tarihce`
+- `basvurular -> sirket_tipleri`
+- `basvurular -> iller / ilceler`
+- `iller -> ilceler`
+
 ### Ekran Görüntüleri
 
 Ekran görüntüleri `docs/screenshots/` klasörü altında yer almaktadır.
@@ -204,6 +226,28 @@ ASP.NET Core Web API
         ├─ Supabase PostgreSQL
         └─ Supabase Storage (Private Bucket)
 ```
+
+### Database and Process Structure
+
+Supabase PostgreSQL stores application, user, status history, and document metadata records. Uploaded file contents are stored physically in Supabase Storage; PostgreSQL keeps the file name, file size, upload date, and Supabase Storage object path.
+
+![Database Schema](docs/screenshots/database-schema.png)
+
+- `basvurular`: Main merchant application table; stores company, authorized person, tax, address, coordinates, category, estimated turnover, status, and date information.
+- `basvuru_dokumanlari`: Stores uploaded document metadata and the Supabase Storage object path.
+- `basvuru_tarihce`: Tracks application status history with description, action date, and user information.
+- `kullanicilar`: Stores application user and login information.
+- `sirket_tipleri`: Company type lookup table.
+- `iller`: City lookup table.
+- `ilceler`: District lookup table related to `iller`.
+
+Relationship summary:
+
+- `basvurular -> basvuru_dokumanlari`
+- `basvurular -> basvuru_tarihce`
+- `basvurular -> sirket_tipleri`
+- `basvurular -> iller / ilceler`
+- `iller -> ilceler`
 
 ### Screenshots
 
