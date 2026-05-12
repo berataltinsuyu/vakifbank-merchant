@@ -1,4 +1,4 @@
-<main class="md:ml-64 mt-16 pb-20 p-6 md:p-10 bg-[#F3F3F3] min-h-screen">
+<main class="md:ml-64 p-6 md:p-10 bg-[#F3F3F3] min-h-screen">
   <div class="max-w-5xl mx-auto space-y-8">
 
     <!-- Başlık -->
@@ -454,19 +454,23 @@
               <span class="text-neutral-400">Adım</span>
               <span class="font-bold">{{ mevcutAdim }} / {{ toplamAdim }}</span>
             </div>
-            <!-- <div class="flex justify-between py-1.5 border-b border-neutral-50">
-              <span class="text-neutral-400">Ürün Tipi</span>
-              <span class="font-bold">Yeni Nesil POS</span>
-            </div> -->
-            <!-- <div class="flex justify-between py-1.5">
-              <span class="text-neutral-400">Başvuru Ücreti</span>
-              <span class="font-bold text-teal-600">Ücretsiz</span>
-            </div> -->
+            <div class="flex justify-between py-1.5 border-b border-neutral-50">
+              <span class="text-neutral-400">Başvuru Durumu</span>
+              <span class="font-bold text-[#705D00]">Taslak</span>
+            </div>
+            <div class="flex justify-between py-1.5 border-b border-neutral-50">
+              <span class="text-neutral-400">Konum</span>
+              <span class="font-bold" [ngClass]="konumSecildi ? 'text-green-600' : 'text-neutral-500'">
+                {{ konumSecildi ? 'Seçildi' : 'Seçilmedi' }}
+              </span>
+            </div>
+            <div class="flex justify-between py-1.5">
+              <span class="text-neutral-400">Evrak</span>
+              <span class="font-bold text-neutral-500">
+                {{ mevcutAdim < 3 ? 'Henüz yüklenmedi' : 'Yükleme adımında' }}
+              </span>
+            </div>
           </div>
-          <!-- <div class="flex items-start gap-2.5 bg-teal-50 p-3 rounded-xl">
-            <span class="material-symbols-outlined text-teal-600 text-sm shrink-0 mt-0.5">verified_user</span>
-            <p class="text-[10px] text-teal-700 leading-tight">256-bit SSL ile korunmaktadır. KVKK kapsamında işlenmektedir.</p>
-          </div> -->
         </div>
       </aside>
 

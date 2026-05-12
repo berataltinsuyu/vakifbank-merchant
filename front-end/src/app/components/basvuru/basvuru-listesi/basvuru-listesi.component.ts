@@ -5,7 +5,6 @@ import { FormsModule } from '@angular/forms';
 import { BasvuruService } from '../../../services/basvuru.service';
 import { CountByDurumPipe } from '../../../pipes/count-by-durum.pipe';
 import { MinPipe } from '../../../pipes/min.pipe';
-import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-basvuru-listesi',
@@ -14,7 +13,6 @@ import { environment } from '../../../../environments/environment';
   templateUrl: './basvuru-listesi.component.html'
 })
 export class BasvuruListesiComponent implements OnInit {
-  readonly apiBaseUrl = environment.apiUrl.replace(/\/api$/, '');
   basvurular: any[] = [];
   filtrelenmis: any[] = [];
   yukleniyor = true;
