@@ -11,7 +11,7 @@
 |-----------|----------|
 | .NET 9 / ASP.NET Core Web API | REST API |
 | Entity Framework Core 9 (DB First) | ORM |
-| MSSQL Server 2022 | Veritabanı |
+| PostgreSQL / Supabase | Veritabanı |
 | FluentValidation | Model doğrulama |
 | Swagger | API dokümantasyonu |
 
@@ -22,13 +22,14 @@
 | TypeScript | Dil |
 | Tailwind CSS 3 | Stil |
 | RxJS | Reaktif programlama |
-| Google Maps JS API | Konum seçimi |
+| OpenStreetMap + Leaflet | Konum seçimi |
 
 ### Harici Servisler
 | Servis | Kullanım |
 |--------|----------|
 | open.er-api.com | Anlık döviz kurları |
-| Google Maps Geocoding API | Adres → koordinat dönüşümü |
+| Nominatim | Adres arama ve ters geocoding |
+| Supabase Storage | Özel doküman depolama ve signed URL |
 
 ---
 
@@ -47,7 +48,7 @@
 └──────────────────┬──────────────────────────┘
                    │
 ┌──────────────────▼──────────────────────────┐
-│         MSSQL — VakifbankMerchant           │
+│       PostgreSQL / Supabase Database        │
 └─────────────────────────────────────────────┘
 ```
 
@@ -59,8 +60,8 @@
 
 ### Başvuru Formu — 3 Adımlı
 - **Adım 1:** Firma kimlik ve iletişim bilgileri
-- **Adım 2:** İl/ilçe seçimi, Google Maps üzerinden konum işaretleme
-- **Adım 3:** PDF/JPEG/PNG formatında çoklu doküman yükleme
+- **Adım 2:** İl/ilçe seçimi, OpenStreetMap + Leaflet üzerinden konum işaretleme
+- **Adım 3:** PDF/JPEG/PNG formatında çoklu doküman yükleme (Supabase Storage)
 
 ### Validasyonlar
 - Vergi no: tam 10 rakam + backend uniqueness kontrolü (async, 600ms debounce)
@@ -141,7 +142,6 @@ VbMerchant/
 ├── Repositories/
 ├── Services/
 ├── Validators/
-├── wwwroot/uploads/
 └── Program.cs
 ```
 
@@ -168,7 +168,8 @@ src/app/
 - **FluentValidation + Async:** `MustAsync` ASP.NET otomatik validasyon pipeline'ıyla uyumsuz. Vergi no uniqueness kontrolü controller'da `AnyAsync` ile yapılıyor.
 - **DB First:** Tablo yapısı değişince `dotnet ef dbcontext scaffold` tekrar çalıştırılmalı.
 - **Döviz Kurları:** DB'ye kaydedilmez, her istekte anlık çekilir.
+- **Dokümanlar:** Dosyalar private Supabase Storage bucket'a backend üzerinden yüklenir; görüntüleme için backend signed URL üretir.
 
 ---
 
-*ASP.NET Core 9 · Angular 17 · MSSQL · Entity Framework Core 9*
+*ASP.NET Core 9 · Angular 17 · PostgreSQL · Entity Framework Core 9*

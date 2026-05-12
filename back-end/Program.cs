@@ -88,7 +88,6 @@ builder.Services.Configure<SupabaseStorageOptions>(
 builder.Services.AddHttpClient<ISupabaseStorageService, SupabaseStorageService>();
 // builder.Services.AddScoped<VbMerchantJobService>();
 builder.Services.AddHttpClient<DovizService>();
-builder.Services.AddHttpClient<GeocodingService>();
 
 var app = builder.Build();
 
