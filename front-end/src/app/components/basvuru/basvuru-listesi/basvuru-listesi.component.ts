@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule, DatePipe, NgIf } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom, forkJoin } from 'rxjs';
 import { BasvuruService } from '../../../services/basvuru.service';
 import { CountByDurumPipe } from '../../../pipes/count-by-durum.pipe';
 import { MinPipe } from '../../../pipes/min.pipe';
@@ -18,6 +19,10 @@ export class BasvuruListesiComponent implements OnInit {
   yukleniyor = true;
   detayYukleniyor = false;
   hata = '';
+  excelYukleniyor = false;
+  excelMesaji = '';
+  excelMesajTipi: 'uyari' | 'hata' = 'uyari';
+  private excelMesajZamanlayici?: ReturnType<typeof setTimeout>;
 
   aramaVergiNo = '';
   aramaFirma = '';
@@ -96,6 +101,57 @@ export class BasvuruListesiComponent implements OnInit {
     this.filtrele();
   }
 
+  async excelIndir() {
+    if (this.filtrelenmis.length === 0) {
+      this.excelMesajGoster('İndirilecek başvuru bulunmuyor.', 'uyari');
+      return;
+    }
+
+    this.excelYukleniyor = true;
+
+    try {
+      const detaylar = await firstValueFrom(forkJoin(
+        this.filtrelenmis.map(b => this.basvuruService.getDetay(b.id))
+      ));
+      const XLSX = await import('xlsx');
+      const satirlar = detaylar.map(b => ({
+        'Başvuru ID': b.id ?? '',
+        'Durum': this.durumEtiket[b.durum] || b.durum || '',
+        'Başvuru Tarihi': this.tarihFormatla(b.olusturmaTarihi),
+        'Şirket Tipi': b.sirketTipi || '',
+        'Firma Ünvanı / Ad Soyad': b.firmaAdi || b.adSoyad || '',
+        'Vergi No / TCKN': b.vergiNoTCKN || b.vergiNoTckn || '',
+        'Vergi Dairesi': b.vergiDairesi || '',
+        'Yetkili TCKN': b.yetkiliTckn || '',
+        'Yetkili Ad Soyad': b.yetkiliAdSoyad || '',
+        'Cep Telefonu': b.cepTelefon || '',
+        'Ev Telefonu': b.evTelefon || '',
+        'İş Telefonu': b.isTelefon || '',
+        'E-posta': b.email || '',
+        'Web Sitesi': b.webAdres || '',
+        'Tam Adres': b.adres || '',
+        'İl': b.ilAdi || '',
+        'İlçe': b.ilceAdi || '',
+        'Posta Kodu': b.postaKodu || '',
+        'Enlem': b.enlem ?? '',
+        'Boylam': b.boylam ?? '',
+        'İş Kategorisi': b.isKategorisi || '',
+        'Tahmini Aylık Ciro': b.tahminiAylikCiro ?? '',
+      }));
+
+      const calismaSayfasi = XLSX.utils.json_to_sheet(satirlar);
+      calismaSayfasi['!cols'] = this.sutunGenislikleri(satirlar);
+
+      const calismaKitabi = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(calismaKitabi, calismaSayfasi, 'Başvuru Geçmişi');
+      XLSX.writeFile(calismaKitabi, 'basvuru-gecmisi-detayli.xlsx');
+    } catch {
+      this.excelMesajGoster('Excel dosyası hazırlanamadı. Lütfen tekrar deneyin.', 'hata');
+    } finally {
+      this.excelYukleniyor = false;
+    }
+  }
+
   get sayfaliListe(): any[] {
     const bas = (this.mevcutSayfa - 1) * this.sayfaBasi;
     return this.filtrelenmis.slice(bas, bas + this.sayfaBasi);
@@ -157,5 +213,43 @@ export class BasvuruListesiComponent implements OnInit {
   get aktifFiltreSayisi(): number {
     return [this.aramaVergiNo, this.aramaFirma, this.aramaEmail,
             this.seciliDurum, this.baslangicTarihi, this.bitisTarihi].filter(f => !!f).length;
+  }
+
+  private tarihFormatla(tarih: string | null | undefined): string {
+    if (!tarih) return '';
+
+    const deger = new Date(tarih);
+    if (Number.isNaN(deger.getTime())) return '';
+
+    return new Intl.DateTimeFormat('tr-TR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(deger);
+  }
+
+  private sutunGenislikleri(satirlar: Record<string, unknown>[]): { wch: number }[] {
+    const basliklar = Object.keys(satirlar[0]);
+
+    return basliklar.map(baslik => ({
+      wch: Math.min(
+        50,
+        Math.max(
+          baslik.length + 2,
+          ...satirlar.map(satir => String(satir[baslik] ?? '').length + 2)
+        )
+      )
+    }));
+  }
+
+  private excelMesajGoster(mesaj: string, tip: 'uyari' | 'hata') {
+    clearTimeout(this.excelMesajZamanlayici);
+    this.excelMesaji = mesaj;
+    this.excelMesajTipi = tip;
+    this.excelMesajZamanlayici = setTimeout(() => {
+      this.excelMesaji = '';
+    }, 4000);
   }
 }
