@@ -96,7 +96,6 @@ Ekran görüntüleri `docs/screenshots/` klasörü altında yer almaktadır.
 | Başvuru Formu  | ![Başvuru Formu](docs/screenshots/application-form.png) |
 | Harita Seçimi | ![Harita Seçimi](docs/screenshots/map-selection.png) |
 | Başvuru Listesi | ![Başvuru Listesi](docs/screenshots/application-list.png) |
-| Başvuru Detayı | ![Başvuru Detayı](docs/screenshots/application-detail.png) |
 | Doküman Yükleme | ![Doküman Yükleme](docs/screenshots/document-upload.png) |
 
 
@@ -259,7 +258,6 @@ Screenshots are available under the `docs/screenshots/` folder.
 | Application Form | ![Application Form](docs/screenshots/application-form.png) |
 | Map Selection | ![Map Selection](docs/screenshots/map-selection.png) |
 | Application List | ![Application List](docs/screenshots/application-list.png) |
-| Application Detail | ![Application Detail](docs/screenshots/application-detail.png) |
 | Document Upload | ![Document Upload](docs/screenshots/document-upload.png) |
 
 ### Project Structure
